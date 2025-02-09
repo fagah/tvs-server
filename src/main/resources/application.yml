@@ -1,0 +1,54 @@
+spring:
+    application:
+        name:   tvs-server-api
+    datasource:
+        url: jdbc:postgresql://localhost:5432/tact_voting_system
+        username: postgres
+        password: postgres
+        hikari:
+            maximum-pool-size: 10
+            minimum-idle: 5
+    
+    jpa:
+        hibernate:
+            ddl-auto: validate
+        properties:
+            hibernate:
+                dialect: org.hibernate.dialect.PostgreSQLDialect
+                format_sql: true
+        show-sql: true
+    
+    flyway:
+        enabled: true
+        baseline-on-migrate: true
+        locations: classpath:db/migration
+
+server:
+    port: 8080
+    
+logging:
+    level:
+        org.hibernate.SQL: DEBUG
+        org.hibernate.type.descriptor.sql.BasicBinder: TRACE
+
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+    operations-sorter: method
+    tags-sorter: alpha
+    disable-swagger-default-url: true
+
+tact:
+    # Add to application.yml
+    jwt:
+        secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
+        expiration: ${JWT_EXPIRATION:86400000} # 24 hours in milliseconds
+    country:
+        name: Ivory Coast
+        code: CI
+    openapi:
+        dev-url: http://localhost:8080
+        prod-url: https://api.tact.ci
