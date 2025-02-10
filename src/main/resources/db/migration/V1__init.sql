@@ -1,3 +1,12 @@
+-- Create function to update the updated_at column
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = NOW();
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 -- Political Parties
 CREATE TABLE political_party (
     id BIGSERIAL PRIMARY KEY,
@@ -6,69 +15,71 @@ CREATE TABLE political_party (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Party Representatives (Users)
-CREATE TABLE party_representative (
+-- Create users table
+CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,
-    username VARCHAR(50) NOT NULL UNIQUE,
+    username VARCHAR(20) NOT NULL UNIQUE,  -- phone number as username
     password VARCHAR(100) NOT NULL,
     full_name VARCHAR(100) NOT NULL,
     email VARCHAR(100) UNIQUE,
-    phone VARCHAR(20),
     party_id BIGINT REFERENCES political_party(id),
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    last_login TIMESTAMP WITH TIME ZONE
-);
-
--- Administrative Regions
-CREATE TABLE region (
-    id BIGSERIAL PRIMARY KEY,
-    code VARCHAR(20) NOT NULL UNIQUE,
-    name VARCHAR(100) NOT NULL,
-    level INTEGER NOT NULL, -- 1: Country, 2: Province, 3: District, etc.
-    parent_id BIGINT REFERENCES region(id)
-);
-
--- Polling Stations
-CREATE TABLE polling_station (
-    id BIGSERIAL PRIMARY KEY,
-    code VARCHAR(50) NOT NULL UNIQUE,
-    name VARCHAR(100) NOT NULL,
-    region_id BIGINT REFERENCES region(id),
-    address TEXT,
-    registered_voters INTEGER NOT NULL DEFAULT 0,
-    coordinates POINT,
+    enabled BOOLEAN DEFAULT true,
+    last_login TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Vote Results per Party per Polling Station
-CREATE TABLE vote_result (
+-- Create roles table
+CREATE TABLE roles (
     id BIGSERIAL PRIMARY KEY,
-    polling_station_id BIGINT REFERENCES polling_station(id),
-    party_id BIGINT REFERENCES political_party(id),
-    votes_count INTEGER NOT NULL,
-    submitted_by_id BIGINT REFERENCES party_representative(id),
-    submission_time TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    status VARCHAR(20) NOT NULL DEFAULT 'PENDING', -- PENDING, VERIFIED, DISPUTED
-    verification_time TIMESTAMP WITH TIME ZONE,
-    verified_by_id BIGINT REFERENCES party_representative(id),
-    image_proof_url TEXT,
-    notes TEXT,
-    CONSTRAINT valid_votes_count CHECK (votes_count >= 0)
+    name VARCHAR(50) NOT NULL UNIQUE,
+    description TEXT,
+    is_default BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Polling Station Assignment (which representatives are assigned to which stations)
-CREATE TABLE polling_station_assignment (
-    id BIGSERIAL PRIMARY KEY,
-    polling_station_id BIGINT REFERENCES polling_station(id),
-    representative_id BIGINT REFERENCES party_representative(id),
-    assigned_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(polling_station_id, representative_id)
+-- Create permissions table
+CREATE TABLE permissions (
+    permission_name VARCHAR(100) PRIMARY KEY,
+    description VARCHAR(255) NOT NULL,
+    category VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create indexes for better query performance
-CREATE INDEX idx_vote_result_polling_station ON vote_result(polling_station_id);
-CREATE INDEX idx_vote_result_party ON vote_result(party_id);
-CREATE INDEX idx_vote_result_status ON vote_result(status);
-CREATE INDEX idx_polling_station_region ON polling_station(region_id);
+-- Create role_permissions table
+CREATE TABLE role_permissions (
+    role_id BIGINT NOT NULL,
+    permission_name VARCHAR(100) NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT pk_role_permissions PRIMARY KEY (role_id, permission_name),
+    CONSTRAINT fk_role_permissions_role FOREIGN KEY (role_id) 
+        REFERENCES roles(id) ON DELETE CASCADE,
+    CONSTRAINT fk_role_permissions_permission FOREIGN KEY (permission_name)
+        REFERENCES permissions(permission_name) ON DELETE CASCADE
+);
+
+-- Create user_roles table
+CREATE TABLE user_roles (
+    user_id BIGINT NOT NULL,
+    role_id BIGINT NOT NULL,
+    CONSTRAINT pk_user_roles PRIMARY KEY (user_id, role_id),
+    CONSTRAINT fk_user_roles_user FOREIGN KEY (user_id) REFERENCES users(id),
+    CONSTRAINT fk_user_roles_role FOREIGN KEY (role_id) REFERENCES roles(id)
+);
+
+-- Create indexes
+CREATE INDEX idx_role_permissions_role_id ON role_permissions(role_id);
+CREATE INDEX idx_user_roles_user_id ON user_roles(user_id);
+CREATE INDEX idx_user_roles_role_id ON user_roles(role_id);
+
+-- Create indexes
+CREATE INDEX idx_permissions_category ON permissions(category);
+CREATE INDEX idx_role_permissions_permission ON role_permissions(permission_name);
+
+-- Add trigger for updated_at
+CREATE TRIGGER update_permissions_updated_at
+    BEFORE UPDATE ON permissions
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();

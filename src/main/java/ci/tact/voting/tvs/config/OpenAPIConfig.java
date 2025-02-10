@@ -5,29 +5,27 @@ import io.swagger.v3.oas.models.info.Contact;
 import io.swagger.v3.oas.models.info.Info;
 import io.swagger.v3.oas.models.info.License;
 import io.swagger.v3.oas.models.servers.Server;
-import org.springframework.beans.factory.annotation.Value;
+import lombok.RequiredArgsConstructor;
+
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.List;
 
 @Configuration
+@RequiredArgsConstructor
 public class OpenAPIConfig {
 
-    @Value("${tact.openapi.dev-url}")
-    private String devUrl;
-
-    @Value("${tact.openapi.prod-url}")
-    private String prodUrl;
+    private final TactProperties tactProperties;
 
     @Bean
     public OpenAPI myOpenAPI() {
         Server devServer = new Server();
-        devServer.setUrl(devUrl);
+        devServer.setUrl(tactProperties.getOpenapi().getDevUrl());
         devServer.setDescription("Server URL in Development environment");
 
         Server prodServer = new Server();
-        prodServer.setUrl(prodUrl);
+        prodServer.setUrl(tactProperties.getOpenapi().getProdUrl());
         prodServer.setDescription("Server URL in Production environment");
 
         Contact contact = new Contact();

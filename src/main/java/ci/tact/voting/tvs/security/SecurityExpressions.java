@@ -9,6 +9,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
+import ci.tact.voting.tvs.domain.PermissionEntity;
 import ci.tact.voting.tvs.domain.User;
 
 @Component("securityExpressions")
@@ -22,7 +23,7 @@ public class SecurityExpressions {
 
         User user = (User) authentication.getPrincipal();
         return user.getAllPermissions().stream()
-                .anyMatch(p -> p.getPermission().equals(permission));
+                .anyMatch(p -> p.getName().equals(permission));
     }
 
     // Method accepting String varargs
@@ -48,12 +49,12 @@ public class SecurityExpressions {
         }
 
         User user = (User) authentication.getPrincipal();
-        Set<Permission> userPermissions = user.getAllPermissions();
+        Set<PermissionEntity> userPermissions = user.getAllPermissions();
 
         return permissions.stream()
                 .anyMatch(requiredPerm -> 
                     userPermissions.stream()
-                        .anyMatch(userPerm -> userPerm.getPermission().equals(requiredPerm))
+                        .anyMatch(userPerm -> userPerm.getName().equals(requiredPerm))
                 );
     }
 }

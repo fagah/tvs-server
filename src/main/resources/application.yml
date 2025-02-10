@@ -15,8 +15,8 @@ spring:
         properties:
             hibernate:
                 dialect: org.hibernate.dialect.PostgreSQLDialect
-                format_sql: true
-        show-sql: true
+                format_sql: false
+        show-sql: false
     
     flyway:
         enabled: true
@@ -42,10 +42,29 @@ springdoc:
     disable-swagger-default-url: true
 
 tact:
-    # Add to application.yml
-    jwt:
-        secret: ${JWT_SECRET:404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970}
-        expiration: ${JWT_EXPIRATION:86400000} # 24 hours in milliseconds
+    security:
+        jwt:
+            secret-key: 404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
+            expiration: 86400000 # a day
+            refresh-token:
+                expiration: 604800000 # 7 days
+    cors:
+        allowed-origins: 
+            - http://localhost:4200
+            - http://localhost:3000
+        allowed-methods:
+            - GET
+            - POST
+            - PUT
+            - DELETE
+            - OPTIONS
+        allowed-headers:
+            - Authorization
+            - Content-Type
+            - X-Requested-With
+            - Accept
+        allow-credentials: true
+    max-age: 3600 # 1 hour in seconds
     country:
         name: Ivory Coast
         code: CI

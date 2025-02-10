@@ -1,6 +1,8 @@
 package ci.tact.voting.tvs.service;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -20,6 +22,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserService {
@@ -134,5 +137,37 @@ public class UserService {
                 .map(Role::getName)
                 .collect(Collectors.toSet()));
         return response;
+    }
+
+    public void initializeUsers() {
+        // Create Admin and a user
+        if (userRepository.count() == 0) {
+            Role adminRole = roleRepository.findByName("ADMIN")
+                    .orElseThrow(() -> new ResourceNotFoundException("Role", "name", "ADMIN"));
+            Role userRole = roleRepository.findByName("USER")
+                    .orElseThrow(() -> new ResourceNotFoundException("Role", "name", "USER"));
+
+            User admin = new User();
+            admin.setUsername("admin");
+            admin.setPassword(passwordEncoder.encode("admin"));
+            admin.setEmail("admin@tact.ci");
+            admin.setFullName("Admin User");
+            admin.setEnabled(true);
+            admin.setRoles(Set.of(adminRole));
+            
+
+            User user  = new User();
+            user.setUsername("user");
+            user.setPassword(passwordEncoder.encode("user"));
+            user.setEmail("user@tact.ci");
+            user.setFullName("Regular User");
+            user.setEnabled(true);
+            user.setRoles(Set.of(userRole));
+
+            userRepository.save(admin);
+            userRepository.save(user);
+
+            log.info("Admin and User users created");
+        }
     }
 }

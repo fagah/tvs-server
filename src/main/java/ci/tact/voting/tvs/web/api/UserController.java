@@ -35,7 +35,7 @@ public class UserController {
         return ResponseEntity.ok(userService.getAllUsers());
     }
 
-    @GetMapping
+    @GetMapping("/paginated")
     @PreAuthorize("hasAuthority('user:read')")
     @Operation(summary = "Get all users (paginated)")
     public ResponseEntity<Page<UserDto>> getPaginatedUsers(Pageable pageable) {

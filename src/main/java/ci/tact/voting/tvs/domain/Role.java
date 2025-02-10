@@ -1,7 +1,11 @@
 package ci.tact.voting.tvs.domain;
 
+import java.time.ZonedDateTime;
 import java.util.HashSet;
 import java.util.Set;
+
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
 import ci.tact.voting.tvs.security.Permission;
 import jakarta.persistence.CollectionTable;
@@ -15,6 +19,8 @@ import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
+import jakarta.persistence.JoinTable;
+import jakarta.persistence.ManyToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -39,23 +45,29 @@ public class Role {
 
     private String description;
 
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(
+    private boolean isDefault;
+
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
         name = "role_permissions",
-        joinColumns = @JoinColumn(name = "role_id")
+        joinColumns = @JoinColumn(name = "role_id"),
+        inverseJoinColumns = @JoinColumn(name = "permission_name")
     )
-    @Column(name = "permission")
-    @Enumerated(EnumType.STRING)
-    private Set<Permission> permissions = new HashSet<>();
+    private Set<PermissionEntity> permissions = new HashSet<>();
 
-    @Column(name = "is_default")
-    private boolean isDefault = false;
+    @CreationTimestamp
+    @Column(name = "created_at")
+    private ZonedDateTime createdAt;
 
-    public void addPermission(Permission permission) {
+    @UpdateTimestamp
+    @Column(name = "updated_at")
+    private ZonedDateTime updatedAt;
+
+    public void addPermission(PermissionEntity permission) {
         permissions.add(permission);
     }
 
-    public void removePermission(Permission permission) {
+    public void removePermission(PermissionEntity permission) {
         permissions.remove(permission);
     }
 }
